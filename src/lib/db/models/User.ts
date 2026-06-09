@@ -14,7 +14,7 @@ export interface IUser extends Document {
 
 const UserSchema = new Schema<IUser>(
   {
-    // companyId is added by tenantPlugin, but defined here for TS
+    companyId: { type: Schema.Types.ObjectId, ref: 'Company', index: true }, // Not required for SUPER_ADMIN
     name: { type: String, required: true },
     phone: { type: String, required: true },
     email: { type: String, sparse: true }, // Sparse allows multiple nulls if uniqueness was required
@@ -31,8 +31,6 @@ const UserSchema = new Schema<IUser>(
     timestamps: true,
   }
 );
-
-UserSchema.plugin(tenantPlugin);
 
 // Unique phone per company
 UserSchema.index({ companyId: 1, phone: 1 }, { unique: true });
