@@ -53,10 +53,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isCompanyAdmin = user.role === 'COMPANY_ADMIN';
 
   const navItems = [
-    { label: 'Dashboard', href: '/dashboard', icon: <HomeIcon />, isActive: true },
-    { label: 'Trades', href: '/trades', icon: <TradeIcon /> },
-    { label: 'Ledger', href: '/ledger', icon: <LedgerIcon /> },
-    ...(isCompanyAdmin ? [{ label: 'Approvals', href: '/approvals', icon: <ApprovalIcon /> }] : []),
+    { label: 'Dashboard', href: '/app/dashboard', icon: <HomeIcon /> },
+    { label: 'Trades', href: '/app/trades', icon: <TradeIcon /> },
+    { label: 'Ledger', href: '/app/ledger', icon: <LedgerIcon /> },
+    ...(isCompanyAdmin ? [{ label: 'Approvals', href: '/app/approvals', icon: <ApprovalIcon /> }] : []),
   ];
 
   return (

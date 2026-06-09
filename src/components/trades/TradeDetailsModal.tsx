@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useSession } from 'next-auth/react';
+import { generateTradeToken, buildWhatsAppShareURL } from '@/lib/services/whatsappShare';
 
 interface TradeDetailsModalProps {
   isOpen: boolean;
@@ -161,6 +162,23 @@ export const TradeDetailsModal: React.FC<TradeDetailsModalProps> = ({ isOpen, tr
                 </span>
               )}
             </div>
+
+            {/* PDF and WhatsApp Export (Always visible once saved) */}
+            {trade.status !== 'DRAFT' && (
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <Button variant="secondary" onClick={() => {
+                  window.open(`/api/trades/${trade._id}/pdf?token=${generateTradeToken(trade._id)}`, '_blank');
+                }}>
+                  View PDF
+                </Button>
+                <Button style={{ background: '#25D366', color: 'white' }} onClick={() => {
+                  const url = buildWhatsAppShareURL(trade, window.location.origin);
+                  window.open(url, '_blank');
+                }}>
+                  Share via WhatsApp
+                </Button>
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: '12px' }}>
               <Button variant="secondary" onClick={onClose}>Close</Button>

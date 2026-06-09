@@ -1,51 +1,38 @@
-export interface TradeSummary {
-  tradeNumber: string;
-  tradeDate: string;
-  sourceLines: Array<{ commodityName: string; quantityKg: string; sourceCityName: string }>;
-  totalExpenses: string;
-  grossProfit: string;
-  netProfit: string;
-  pdfUrl: string;
-}
-
-export class WhatsAppShare {
-  
-  /**
-   * Builds a WhatsApp `wa.me` deep link
-   */
-  static buildWhatsAppShareURL(phoneNumber: string, trade: TradeSummary): string {
-    // Format phone: remove spaces, +, brackets, dashes. Replace leading 0 with 91.
-    let cleanPhone = phoneNumber.replace(/[\s+\-()]/g, '');
-    if (cleanPhone.startsWith('0')) {
-      cleanPhone = '91' + cleanPhone.substring(1);
-    } else if (cleanPhone.length === 10) {
-      // Assume Indian number if just 10 digits
-      cleanPhone = '91' + cleanPhone;
-    }
-
-    const sourceSummary = trade.sourceLines
-      .map(l => `  • ${l.commodityName}: ${l.quantityKg}kg from ${l.sourceCityName}`)
-      .join('\n');
-
-    const message = `📊 *Mandi Trade Update*
-━━━━━━━━━━━━━━━━━━━━
-🔖 Trade #: ${trade.tradeNumber}
-📅 Date: ${trade.tradeDate}
-
-📦 *Sourcing:*
-${sourceSummary || '  No items'}
-
-💰 *Financials:*
-  • Expenses: ₹${trade.totalExpenses}
-  • Gross Profit: ₹${trade.grossProfit}
-  • Net Profit: ₹${trade.netProfit}
-
-📄 *Full Audit PDF:*
-${trade.pdfUrl || 'Not available'}
-━━━━━━━━━━━━━━━━━━━━
-_Shared via MandiTrader SaaS_`;
-
-    const encodedMessage = encodeURIComponent(message);
-    return `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+// Utility to generate the secure PDF token
+export const generateTradeToken = (id: string) => {
+  let hash = 0;
+  const str = id + 'MANDI_SECRET_2026';
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
   }
+  return Math.abs(hash).toString(16);
+};
+
+export function buildWhatsAppShareURL(trade: any, baseUrl: string): string {
+  // 1. Generate the secure PDF link
+  const pdfLink = `${baseUrl}/api/trades/${trade._id}/pdf?token=${generateTradeToken(trade._id)}`;
+
+  // 2. Build the message text
+  let message = `*Mandi Trade Update: ${trade.tradeNumber}*\n`;
+  message += `Date: ${new Date(trade.tradeDate).toLocaleDateString()}\n`;
+  message += `Status: ${trade.status}\n\n`;
+
+  message += `*Sourcing*\n`;
+  trade.sourceLines?.forEach((line: any) => {
+    message += `- ${line.commodityName}: ${line.quantityKg?.toString() || 0} kg\n`;
+  });
+
+  message += `\n*Financials*\n`;
+  message += `- Gross Sale: Rs. ${trade.financials?.totalGrossSale?.toString() || 0}\n`;
+  message += `- Freight: Rs. ${trade.logistics?.freightCost?.toString() || 0}\n`;
+  message += `- Net Profit: Rs. ${trade.financials?.netProfitAfterPeshgi?.toString() || 0}\n\n`;
+
+  message += `*Full Audit PDF Report:*\n${pdfLink}\n`;
+
+  // 3. Encode for wa.me
+  const encodedMessage = encodeURIComponent(message);
+  
+  // Return the universal WhatsApp link (user can pick who to send it to)
+  return `https://wa.me/?text=${encodedMessage}`;
 }
