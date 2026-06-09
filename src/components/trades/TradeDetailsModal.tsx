@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { useSession } from 'next-auth/react';
 
 interface TradeDetailsModalProps {
   isOpen: boolean;
   tradeId: string | null;
   onClose: () => void;
-  onSuccess: () => void; // Triggered when a trade is deleted or approved
+  onSuccess: () => void;
 }
 
 export const TradeDetailsModal: React.FC<TradeDetailsModalProps> = ({ isOpen, tradeId, onClose, onSuccess }) => {
+  const { data: session } = useSession();
   const [trade, setTrade] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     if (isOpen && tradeId) {
@@ -32,7 +34,7 @@ export const TradeDetailsModal: React.FC<TradeDetailsModalProps> = ({ isOpen, tr
 
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this DRAFT trade?')) return;
-    setIsDeleting(true);
+    setIsProcessing(true);
     try {
       const res = await fetch(`/api/trades/${tradeId}`, { method: 'DELETE' });
       if (res.ok) {
@@ -45,12 +47,71 @@ export const TradeDetailsModal: React.FC<TradeDetailsModalProps> = ({ isOpen, tr
     } catch (e: any) {
       alert(e.message);
     } finally {
-      setIsDeleting(false);
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSubmitForApproval = async () => {
+    if (!confirm('Submit this trade for Maker-Checker approval?')) return;
+    setIsProcessing(true);
+    try {
+      const res = await fetch(`/api/trades/${tradeId}/submit`, { method: 'POST' });
+      if (res.ok) {
+        onSuccess();
+        onClose();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to submit');
+      }
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleApproveDeny = async (action: 'APPROVE' | 'DENY') => {
+    let remarks = '';
+    if (action === 'DENY') {
+      const input = prompt('Please enter a reason for rejection:');
+      if (input === null) return; // cancelled
+      if (input.trim() === '') {
+        alert('Remarks are required to deny a trade.');
+        return;
+      }
+      remarks = input;
+    } else {
+      if (!confirm('Are you sure you want to APPROVE this trade?')) return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const res = await fetch(`/api/trades/${tradeId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, remarks })
+      });
+      if (res.ok) {
+        onSuccess();
+        onClose();
+      } else {
+        const data = await res.json();
+        alert(data.error || `Failed to ${action.toLowerCase()}`);
+      }
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const labelStyle = { color: 'var(--text-secondary)', fontSize: '0.85rem' };
   const valueStyle = { color: 'var(--text-primary)', fontWeight: 500, fontSize: '1rem', marginTop: '4px' };
+
+  const currentUserId = (session?.user as any)?.id;
+  const currentUserRole = (session?.user as any)?.role;
+  const isMaker = trade?.createdBy === currentUserId;
+  const canApprove = (currentUserRole === 'COMPANY_ADMIN' || currentUserRole === 'SUPER_ADMIN') && !isMaker;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={trade ? `Trade: ${trade.tradeNumber}` : 'Loading...'} size="lg">
@@ -90,18 +151,44 @@ export const TradeDetailsModal: React.FC<TradeDetailsModalProps> = ({ isOpen, tr
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
-            <Button variant="secondary" onClick={onClose}>Close</Button>
-            {trade.status === 'DRAFT' && (
-              <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
-                {isDeleting ? 'Deleting...' : 'Delete Draft'}
-              </Button>
-            )}
-            {trade.status === 'DRAFT' && (
-               <Button onClick={() => alert("Submission for Maker-Checker approval coming soon.")}>
-                 Submit for Approval
-               </Button>
-            )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+            
+            {/* Contextual Messages */}
+            <div>
+              {trade.status === 'WAITING_FOR_APPROVAL' && !canApprove && (
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  {isMaker ? 'Waiting for a different Admin to approve your trade.' : 'Pending Admin Approval.'}
+                </span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <Button variant="secondary" onClick={onClose}>Close</Button>
+              
+              {/* DRAFT Actions */}
+              {trade.status === 'DRAFT' && (
+                <Button variant="danger" onClick={handleDelete} disabled={isProcessing}>
+                  Delete Draft
+                </Button>
+              )}
+              {trade.status === 'DRAFT' && (
+                <Button onClick={handleSubmitForApproval} disabled={isProcessing}>
+                  Submit for Approval
+                </Button>
+              )}
+
+              {/* WAITING_FOR_APPROVAL Actions (Checker Only) */}
+              {trade.status === 'WAITING_FOR_APPROVAL' && canApprove && (
+                <>
+                  <Button variant="danger" onClick={() => handleApproveDeny('DENY')} disabled={isProcessing}>
+                    Reject
+                  </Button>
+                  <Button onClick={() => handleApproveDeny('APPROVE')} disabled={isProcessing}>
+                    Approve
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
 
         </div>
