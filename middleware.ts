@@ -115,8 +115,13 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    // Rewrite to app route group
-    const rewriteUrl = new URL(`/app${pathname === '/' ? '' : pathname}`, request.url);
+    // Redirect root to dashboard
+    if (pathname === '/') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+
+    // Rewrite to app folder
+    const rewriteUrl = new URL(`/app${pathname}`, request.url);
     rewriteUrl.search = url.search;
     return NextResponse.rewrite(rewriteUrl);
   }
