@@ -52,6 +52,10 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
+    if (pathname === '/login') {
+      return NextResponse.next();
+    }
+
     // Only SUPER_ADMIN can access admin panel
     if (token && token.role !== 'SUPER_ADMIN' && pathname !== '/login') {
       return NextResponse.rewrite(new URL('/unauthorized', request.url));
@@ -68,6 +72,10 @@ export async function middleware(request: NextRequest) {
     // Redirect unauthenticated users to login
     if (!token && pathname !== '/login') {
       return NextResponse.redirect(new URL('/login', request.url));
+    }
+
+    if (pathname === '/login') {
+      return NextResponse.next();
     }
 
     // SUPER_ADMIN should go to admin panel
