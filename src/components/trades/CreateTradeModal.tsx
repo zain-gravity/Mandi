@@ -169,7 +169,7 @@ export const CreateTradeModal: React.FC<CreateTradeModalProps> = ({ isOpen, onCl
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
-              <Button variant="outline" type="button" onClick={() => setStep(1)}>← Back</Button>
+              <Button variant="secondary" type="button" onClick={() => setStep(1)}>← Back</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'Creating...' : 'Create Draft Trade'}
               </Button>

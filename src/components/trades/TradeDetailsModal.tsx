@@ -91,7 +91,7 @@ export const TradeDetailsModal: React.FC<TradeDetailsModalProps> = ({ isOpen, tr
 
           {/* Action Buttons */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
-            <Button variant="outline" onClick={onClose}>Close</Button>
+            <Button variant="secondary" onClick={onClose}>Close</Button>
             {trade.status === 'DRAFT' && (
               <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
                 {isDeleting ? 'Deleting...' : 'Delete Draft'}
