@@ -1,0 +1,68 @@
+.card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--trans-normal);
+}
+
+.noPadding {
+  padding: 0;
+}
+
+/* Variants */
+.default {
+  box-shadow: var(--shadow-sm);
+}
+
+.stat {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+}
+
+.action {
+  cursor: pointer;
+}
+
+.action:hover {
+  background: var(--bg-card-hover);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: var(--shadow-md);
+}
+
+/* Glow Effects */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  opacity: 0;
+  transition: opacity var(--trans-normal);
+}
+
+.glow-emerald::before {
+  background: var(--grad-primary);
+  opacity: 0.8;
+}
+
+.glow-emerald:hover {
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+}
+
+.glow-amber::before {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  opacity: 0.8;
+}
+
+.glow-indigo::before {
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  opacity: 0.8;
+}
