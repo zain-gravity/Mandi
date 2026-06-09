@@ -111,7 +111,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const pdfBytes = await pdfDoc.save();
 
     // In Next.js App Router, we return the raw bytes in NextResponse
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(pdfBytes as unknown as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
