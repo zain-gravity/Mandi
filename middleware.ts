@@ -120,8 +120,13 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    // Rewrite to app folder
-    const rewriteUrl = new URL(`/app${pathname}`, request.url);
+    // Rewrite to app folder if not already there
+    let targetPath = pathname;
+    if (!pathname.startsWith('/app')) {
+      targetPath = `/app${pathname === '/' ? '' : pathname}`;
+    }
+    
+    const rewriteUrl = new URL(targetPath, request.url);
     rewriteUrl.search = url.search;
     return NextResponse.rewrite(rewriteUrl);
   }
