@@ -16,18 +16,17 @@ export default function tenantPlugin(schema: Schema) {
   });
 
   // 2. Enforce companyId in all queries
-  const enforceTenant = function (this: any, next: (err?: Error) => void) {
+  const enforceTenant = function (this: any) {
     const query = this.getQuery();
     
     // Bypass check if explicitly disabled (e.g., for Super Admin operations)
     if (this.options?.bypassTenantCheck) {
-      return next();
+      return;
     }
 
     if (!query.companyId && !query._id) { // allow findById if _id is strictly provided, but usually both are better
-        return next(new Error('companyId filter is required for all queries to ensure data isolation.'));
+        throw new Error('companyId filter is required for all queries to ensure data isolation.');
     }
-    next();
   };
 
   const queryMethods = [
@@ -46,16 +45,15 @@ export default function tenantPlugin(schema: Schema) {
   
   // Aggregate pipelines need manual companyId injection at the $match stage, 
   // so we pre-check aggregations to ensure the first pipeline stage is a $match with companyId
-  schema.pre('aggregate' as any, function (this: any, next: (err?: Error) => void) {
+  schema.pre('aggregate' as any, function (this: any) {
     const pipeline = this.pipeline();
     
     if (this.options?.bypassTenantCheck) {
-      return next();
+      return;
     }
 
     if (!pipeline || pipeline.length === 0 || !pipeline[0].$match || !pipeline[0].$match.companyId) {
-      return next(new Error('Aggregate pipelines must start with a $match stage containing companyId.'));
+      throw new Error('Aggregate pipelines must start with a $match stage containing companyId.');
     }
-    next();
   });
 }
